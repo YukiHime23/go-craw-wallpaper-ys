@@ -1,14 +1,15 @@
 package main
 
 import (
-	crawal_sqlite "craw-al/db"
-	"craw-al/function"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	craw_al "github.com/YukiHime23/craw-al"
 )
 
 var (
@@ -68,12 +69,16 @@ func main() {
 
 	var idExist []int
 
-	db := crawal_sqlite.GetDb()
+	db := craw_al.GetSqliteDb()
+
 	// get id exist
 	err = db.QueryRow("SELECT id_wallpaper FROM azur_lane").Scan(&idExist)
+	if err != nil && err != sql.ErrNoRows {
+		log.Fatal("select id error: ", err)
+	}
 
 	for _, row := range resApi.Data.Rows {
-		if function.IntInArray(idExist, row.ID) {
+		if craw_al.IntInArray(idExist, row.ID) {
 			continue
 		}
 
@@ -81,7 +86,7 @@ func main() {
 		al.Url = DomainLoadWallpaperAzurLane + row.Works
 		al.FileName = strings.ReplaceAll(row.Title+" ("+row.Artist+").jpeg", "/", "-")
 		al.IdWallpaper = row.ID
-		if err = function.DownloadFile(al.Url, al.FileName, pathFile); err != nil {
+		if err = craw_al.DownloadFile(al.Url, al.FileName, pathFile); err != nil {
 			log.Fatal("download file error: ", err)
 		}
 		insertData := "INSERT INTO azur_lane VALUES (?, ?, ?)"

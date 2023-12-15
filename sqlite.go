@@ -1,4 +1,4 @@
-package crawal_sqlite
+package craw_al
 
 import (
 	"database/sql"
@@ -10,15 +10,16 @@ import (
 var db *sql.DB
 
 func init() {
+	var err error
 	// Kết nối đến cơ sở dữ liệu SQLite
-	db, err := sql.Open("sqlite3", "data.db")
+	db, err = sql.Open("sqlite3", "data.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Kiểm tra xem bảng có tồn tại hay không, nếu không thì tạo mới
 	createTable := `
-		CREATE TABLE azur_lane (
+		CREATE TABLE IF NOT EXISTS azur_lane (
 			id_wallpaper INT PRIMARY KEY,
 			file_name VARCHAR(255) NOT NULL,
 			url VARCHAR(255) NOT NULL
@@ -30,6 +31,6 @@ func init() {
 	}
 }
 
-func GetDb() *sql.DB {
+func GetSqliteDb() *sql.DB {
 	return db
 }
