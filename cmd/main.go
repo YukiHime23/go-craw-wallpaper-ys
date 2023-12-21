@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"io"
 	"log"
 	"net/http"
@@ -47,6 +48,13 @@ type AzurLane struct {
 
 func main() {
 
+	var pathFile string
+	pathP := flag.String("path", "", "Path to the directory where wallpapers should be saved.")
+	flag.Parse()
+	if pathP == nil || *pathP == "" {
+		pathFile = "AzurLane"
+	}
+
 	res, err := http.Get(ApiListWallpaperAzurLane)
 	if err != nil {
 		log.Fatal("call api error: ", err)
@@ -62,7 +70,6 @@ func main() {
 		log.Fatal("json Unmarshal error: ", err)
 	}
 
-	pathFile := "AzurLane"
 	if err = os.MkdirAll(pathFile, os.ModePerm); err != nil {
 		log.Fatal("mkdir file error: ", err)
 	}
