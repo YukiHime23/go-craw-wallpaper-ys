@@ -51,7 +51,7 @@ func main() {
 	pathP := flag.String("path", "", "Path to the directory where wallpapers should be saved.")
 	flag.Parse()
 	if pathP == nil || *pathP == "" {
-		pathFile = "AzurLane"
+		pathFile = "AzurLaneImg"
 	}
 
 	res, err := http.Get(ApiListWallpaperAzurLane)
