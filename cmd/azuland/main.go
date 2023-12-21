@@ -47,7 +47,6 @@ type AzurLane struct {
 }
 
 func main() {
-
 	var pathFile string
 	pathP := flag.String("path", "", "Path to the directory where wallpapers should be saved.")
 	flag.Parse()
