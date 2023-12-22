@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -51,8 +52,11 @@ func main() {
 	pathP := flag.String("path", "", "Path to the directory where wallpapers should be saved.")
 	flag.Parse()
 	if pathP == nil || *pathP == "" {
-		pathFile = "AzurLaneImg"
+		pathFile = "AzurLane_Wallpaper"
+	} else {
+		pathFile = *pathP
 	}
+	fmt.Println(pathFile)
 
 	res, err := http.Get(ApiListWallpaperAzurLane)
 	if err != nil {
@@ -73,14 +77,20 @@ func main() {
 		log.Fatal("mkdir file error: ", err)
 	}
 
-	var idExist []int
-
 	db := craw_al.GetSqliteDb()
 
+	var idExist []int
 	// get id exist
-	err = db.QueryRow("SELECT id_wallpaper FROM azur_lane").Scan(&idExist)
+	ids, err := db.Query("SELECT id_wallpaper FROM azur_lane")
 	if err != nil && err != sql.ErrNoRows {
 		log.Fatal("select id error: ", err)
+	}
+	defer ids.Close()
+
+	var id int
+	for ids.Next() {
+		ids.Scan(&id)
+		idExist = append(idExist, id)
 	}
 
 	for _, row := range resApi.Data.Rows {
@@ -96,7 +106,7 @@ func main() {
 			log.Fatal("download file error: ", err)
 		}
 		insertData := "INSERT INTO azur_lane VALUES (?, ?, ?)"
-		_, err = db.Exec(insertData, al.Url, al.FileName, pathFile)
+		_, err = db.Exec(insertData, al.IdWallpaper, al.FileName, al.Url)
 		if err != nil {
 			log.Fatal(err)
 		}
