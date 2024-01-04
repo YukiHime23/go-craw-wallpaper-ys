@@ -1,4 +1,4 @@
-package alwallpaper
+package downloadAL
 
 import (
 	"errors"
