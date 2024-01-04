@@ -1,4 +1,4 @@
-package craw_al
+package alwallpaper
 
 import (
 	"database/sql"

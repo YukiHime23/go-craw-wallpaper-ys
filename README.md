@@ -1,4 +1,4 @@
-Craw azur lane wallpaper
+Download azur lane wallpaper
 
 require:
  - golang 1.21

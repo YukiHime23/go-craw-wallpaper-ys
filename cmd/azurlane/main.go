@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	craw_al "github.com/YukiHime23/craw-al"
+	alwallpaper "github.com/YukiHime23/downloadAL"
 )
 
 var (
@@ -77,7 +77,7 @@ func main() {
 		log.Fatal("mkdir file error: ", err)
 	}
 
-	db := craw_al.GetSqliteDb()
+	db := alwallpaper.GetSqliteDb()
 
 	var idExist []int
 	// get id exist
@@ -94,7 +94,7 @@ func main() {
 	}
 
 	for _, row := range resApi.Data.Rows {
-		if craw_al.IntInArray(idExist, row.ID) {
+		if alwallpaper.IntInArray(idExist, row.ID) {
 			continue
 		}
 
@@ -102,7 +102,7 @@ func main() {
 		al.Url = DomainLoadWallpaperAzurLane + row.Works
 		al.FileName = strings.ReplaceAll(row.Title+" ("+row.Artist+").jpeg", "/", "-")
 		al.IdWallpaper = row.ID
-		if err = craw_al.DownloadFile(al.Url, al.FileName, pathFile); err != nil {
+		if err = alwallpaper.DownloadFile(al.Url, al.FileName, pathFile); err != nil {
 			log.Fatal("download file error: ", err)
 		}
 		insertData := "INSERT INTO azur_lane VALUES (?, ?, ?)"
