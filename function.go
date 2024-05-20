@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 func DownloadFile(URL, fileName string, pathTo string) error {
@@ -51,4 +52,28 @@ func IntInArray(arr []int, str int) bool {
 		}
 	}
 	return false
+}
+
+func CreateFolder(path string) (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("Error getting home directory: %v", err)
+	}
+
+	// Change to the home directory
+	err = os.Chdir(homeDir)
+	if err != nil {
+		return "", fmt.Errorf("Error changing to home directory: %v", err)
+	}
+
+	// Create the new folder
+	err = os.MkdirAll(path, 0755)
+	if err != nil {
+		return "", fmt.Errorf("Error creating new folder: %v", err)
+	}
+
+	// Print the full path of the new folder
+	newFolderPath := filepath.Join(homeDir, path)
+	fmt.Println("New folder created at:", newFolderPath)
+	return newFolderPath, nil
 }

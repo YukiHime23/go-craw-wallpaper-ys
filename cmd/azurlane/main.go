@@ -4,11 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/YukiHime23/downloadAL"
@@ -56,7 +54,11 @@ func main() {
 	} else {
 		pathFile = *pathP
 	}
-	fmt.Println(pathFile)
+
+	newPath, err := downloadAL.CreateFolder(pathFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	res, err := http.Get(ApiListWallpaperAzurLane)
 	if err != nil {
@@ -71,10 +73,6 @@ func main() {
 	var resApi ResponseApi
 	if err = json.Unmarshal(resBody, &resApi); err != nil {
 		log.Fatal("json Unmarshal error: ", err)
-	}
-
-	if err = os.MkdirAll(pathFile, os.ModePerm); err != nil {
-		log.Fatal("mkdir file error: ", err)
 	}
 
 	db := downloadAL.GetSqliteDb()
@@ -102,7 +100,7 @@ func main() {
 		al.Url = DomainLoadWallpaperAzurLane + row.Works
 		al.FileName = strings.ReplaceAll(row.Title+" ("+row.Artist+").jpeg", "/", "-")
 		al.IdWallpaper = row.ID
-		if err = downloadAL.DownloadFile(al.Url, al.FileName, pathFile); err != nil {
+		if err = downloadAL.DownloadFile(al.Url, al.FileName, newPath); err != nil {
 			log.Fatal("download file error: ", err)
 		}
 		insertData := "INSERT INTO azur_lane VALUES (?, ?, ?)"
@@ -110,6 +108,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		break
 	}
 
 	defer db.Close()
