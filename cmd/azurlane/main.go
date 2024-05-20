@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/YukiHime23/downloadAL"
+	downloadAL "github.com/YukiHime23/go-craw-al"
 )
 
 var (
