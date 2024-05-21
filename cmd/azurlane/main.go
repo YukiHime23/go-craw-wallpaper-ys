@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
+	"sync"
 
 	downloadAL "github.com/YukiHime23/go-craw-al"
 	"github.com/YukiHime23/go-craw-al/models"
@@ -79,27 +79,36 @@ func main() {
 
 		listWallpp = append(listWallpp, al)
 	}
-
+	var wg sync.WaitGroup
 	queue := startCraw(listWallpp)
 
-	crawURL(db, queue, newPath)
+	for i := 1; i <= 5; i++ {
+		wg.Add(1)
+		go crawURL(db, queue, newPath, &wg)
+	}
+	wg.Wait()
 
+	fmt.Println("All workers are done, exiting program.")
 	defer db.Close()
 }
 
-func crawURL(db *sql.DB, queue <-chan models.AzurLane, path string) {
+func crawURL(db *sql.DB, queue <-chan models.AzurLane, path string, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	for al := range queue {
 		if err := downloadAL.DownloadFile(al.Url, al.FileName, path); err != nil {
 			log.Fatal("download file error: ", err)
 		}
+		fmt.Printf(`-> download done "%s" <-`, al.FileName)
+
 		insertData := "INSERT INTO azur_lane VALUES (?, ?, ?)"
 		_, err := db.Exec(insertData, al.IdWallpaper, al.FileName, al.Url)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
 	}
+	fmt.Println("Worker done and exit")
 }
 
 func startCraw(list []models.AzurLane) <-chan models.AzurLane {

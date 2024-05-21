@@ -11,8 +11,6 @@ import (
 )
 
 func DownloadFile(URL, fileName string, pathTo string) error {
-	fmt.Println("-> Start download <-")
-
 	//Get the response bytes from the url
 	response, err := http.Get(URL)
 	if err != nil {
@@ -41,7 +39,6 @@ func DownloadFile(URL, fileName string, pathTo string) error {
 		return err
 	}
 
-	fmt.Println("-> download done \"" + fileName + "\" <-")
 	return nil
 }
 
