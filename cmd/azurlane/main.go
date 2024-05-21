@@ -10,40 +10,13 @@ import (
 	"strings"
 
 	downloadAL "github.com/YukiHime23/go-craw-al"
+	"github.com/YukiHime23/go-craw-al/models"
 )
 
 var (
 	ApiListWallpaperAzurLane    = "https://azurlane.yo-star.com/api/admin/special/public-list?page_index=1&page_num=1200&type=1"
 	DomainLoadWallpaperAzurLane = "https://webusstatic.yo-star.com/"
 )
-
-type ResponseApi struct {
-	StatusCode int     `json:"statusCode"`
-	Data       ResData `json:"data"`
-}
-
-type ResData struct {
-	Count int         `json:"count"`
-	Rows  []Wallpaper `json:"rows"`
-}
-
-type Wallpaper struct {
-	ID          int    `json:"id"`
-	Title       string `json:"title"`
-	Artist      string `json:"artist"`
-	Cover       string `json:"cover"`
-	Works       string `json:"works"`
-	Type        int    `json:"type"`
-	Sort        int    `json:"sort_index"`
-	PublishTime int    `json:"publish_time"`
-	New         bool   `json:"new"`
-}
-
-type AzurLane struct {
-	FileName    string `json:"file_name"`
-	IdWallpaper int    `json:"id_wallpaper"`
-	Url         string `json:"url"`
-}
 
 func main() {
 	var pathFile string
@@ -70,7 +43,7 @@ func main() {
 		log.Fatal("read body error: ", err)
 	}
 
-	var resApi ResponseApi
+	var resApi models.ResponseApi
 	if err = json.Unmarshal(resBody, &resApi); err != nil {
 		log.Fatal("json Unmarshal error: ", err)
 	}
@@ -91,15 +64,23 @@ func main() {
 		idExist = append(idExist, id)
 	}
 
+  listWallpp := make([]models.AzurLane, 0)
 	for _, row := range resApi.Data.Rows {
 		if downloadAL.IntInArray(idExist, row.ID) {
 			continue
 		}
 
-		var al AzurLane
+		var al models.AzurLane
 		al.Url = DomainLoadWallpaperAzurLane + row.Works
 		al.FileName = strings.ReplaceAll(row.Title+" ("+row.Artist+").jpeg", "/", "-")
 		al.IdWallpaper = row.ID
+
+    listWallpp = append(listWallpp, al)
+  }
+  
+  queue := downloadAL.StartCraw(listWallpp)
+  
+  for _, v := range listWallpp {  
 		if err = downloadAL.DownloadFile(al.Url, al.FileName, newPath); err != nil {
 			log.Fatal("download file error: ", err)
 		}

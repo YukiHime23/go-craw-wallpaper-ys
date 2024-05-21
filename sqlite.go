@@ -1,4 +1,4 @@
-package downloadAL
+package gocrawal
 
 import (
 	"database/sql"
