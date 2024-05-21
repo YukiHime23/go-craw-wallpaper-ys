@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	downloadAL "github.com/YukiHime23/go-craw-al"
 	"github.com/YukiHime23/go-craw-al/models"
@@ -64,7 +66,7 @@ func main() {
 		idExist = append(idExist, id)
 	}
 
-  listWallpp := make([]models.AzurLane, 0)
+	listWallpp := make([]models.AzurLane, 0)
 	for _, row := range resApi.Data.Rows {
 		if downloadAL.IntInArray(idExist, row.ID) {
 			continue
@@ -75,21 +77,41 @@ func main() {
 		al.FileName = strings.ReplaceAll(row.Title+" ("+row.Artist+").jpeg", "/", "-")
 		al.IdWallpaper = row.ID
 
-    listWallpp = append(listWallpp, al)
-  }
-  
-  queue := downloadAL.StartCraw(listWallpp)
-  
-  for _, v := range listWallpp {  
-		if err = downloadAL.DownloadFile(al.Url, al.FileName, newPath); err != nil {
+		listWallpp = append(listWallpp, al)
+	}
+
+	queue := startCraw(listWallpp)
+
+	crawURL(db, queue, newPath)
+
+	defer db.Close()
+}
+
+func crawURL(db *sql.DB, queue <-chan models.AzurLane, path string) {
+	for al := range queue {
+		if err := downloadAL.DownloadFile(al.Url, al.FileName, path); err != nil {
 			log.Fatal("download file error: ", err)
 		}
 		insertData := "INSERT INTO azur_lane VALUES (?, ?, ?)"
-		_, err = db.Exec(insertData, al.IdWallpaper, al.FileName, al.Url)
+		_, err := db.Exec(insertData, al.IdWallpaper, al.FileName, al.Url)
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
 
-	defer db.Close()
+		time.Sleep(time.Second)
+	}
+}
+
+func startCraw(list []models.AzurLane) <-chan models.AzurLane {
+	queue := make(chan models.AzurLane, 100)
+
+	go func() {
+		for _, v := range list {
+			queue <- v
+			fmt.Printf("File %s has been enqueued\n", v.FileName)
+		}
+		close(queue)
+	}()
+
+	return queue
 }

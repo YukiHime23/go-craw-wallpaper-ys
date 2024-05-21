@@ -8,9 +8,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"time"
-
-	"github.com/YukiHime23/go-craw-al/models"
 )
 
 func DownloadFile(URL, fileName string, pathTo string) error {
@@ -80,28 +77,3 @@ func CreateFolder(path string) (string, error) {
 	fmt.Println("New folder created at:", newFolderPath)
 	return newFolderPath, nil
 }
-
-func CrawURL(queue <- chan models.AzurLane, name string)  {
-  for _, v := range queue {
-    fmt.Println("test")
-    time.Sleep(time.Second)
-  }
-  fmt.Printf("Worker %s done and exit\n", name)
-}
-
-func StartCraw(list []models.AzurLane) <-chan models.AzurLane {
-	queue := make(chan models.AzurLane, 100)
-
-	go func() {
-    for _, v := range list {
-      queue <- v
-			fmt.Printf("File %s has been enqueued\n", v.FileName)
-    }
-
-		close(queue)
-	}()
-
-	return queue
-}
-
-
