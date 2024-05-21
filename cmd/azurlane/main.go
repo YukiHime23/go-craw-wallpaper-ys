@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	downloadAL "github.com/YukiHime23/go-crawal"
+	"github.com/YukiHime23/go-crawal"
 	"github.com/YukiHime23/go-crawal/models"
 )
 
@@ -30,7 +30,7 @@ func main() {
 		pathFile = *pathP
 	}
 
-	newPath, err := downloadAL.CreateFolder(pathFile)
+	newPath, err := crawal.CreateFolder(pathFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func main() {
 		log.Fatal("json Unmarshal error: ", err)
 	}
 
-	db := downloadAL.GetSqliteDb()
+	db := crawal.GetSqliteDb()
 
 	var idExist []int
 	// get id exist
@@ -68,7 +68,7 @@ func main() {
 
 	listWallpp := make([]models.AzurLane, 0)
 	for _, row := range resApi.Data.Rows {
-		if downloadAL.IntInArray(idExist, row.ID) {
+		if crawal.IntInArray(idExist, row.ID) {
 			continue
 		}
 
@@ -96,7 +96,7 @@ func crawURL(db *sql.DB, queue <-chan models.AzurLane, path string, wg *sync.Wai
 	defer wg.Done()
 
 	for al := range queue {
-		if err := downloadAL.DownloadFile(al.Url, al.FileName, path); err != nil {
+		if err := crawal.DownloadFile(al.Url, al.FileName, path); err != nil {
 			log.Fatal("download file error: ", err)
 		}
 		fmt.Printf(`-> download done "%s" <-`, al.FileName)
