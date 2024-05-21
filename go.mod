@@ -1,4 +1,4 @@
-module github.com/YukiHime23/go-craw-al
+module github.com/YukiHime23/go-crawal
 
 go 1.21.3
 

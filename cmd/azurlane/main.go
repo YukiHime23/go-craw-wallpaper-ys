@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
-	downloadAL "github.com/YukiHime23/go-craw-al"
-	"github.com/YukiHime23/go-craw-al/models"
+	downloadAL "github.com/YukiHime23/go-crawal"
+	"github.com/YukiHime23/go-crawal/models"
 )
 
 var (
