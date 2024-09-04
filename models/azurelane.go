@@ -1,15 +1,5 @@
 package models
 
-type ResponseApi struct {
-	StatusCode int     `json:"statusCode"`
-	Data       ResData `json:"data"`
-}
-
-type ResData struct {
-	Count int         `json:"count"`
-	Rows  []Wallpaper `json:"rows"`
-}
-
 type Wallpaper struct {
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
