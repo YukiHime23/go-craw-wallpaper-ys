@@ -12,8 +12,35 @@ import (
 	"sync"
 
 	"github.com/YukiHime23/go-crawal"
-	"github.com/YukiHime23/go-crawal/models"
 )
+
+type ResponseApi struct {
+	StatusCode int     `json:"statusCode"`
+	Data       ResData `json:"data"`
+}
+
+type ResData struct {
+	Count int         `json:"count"`
+	Rows  []Wallpaper `json:"rows"`
+}
+
+type Wallpaper struct {
+	ID          int    `json:"id"`
+	Title       string `json:"title"`
+	Artist      string `json:"artist"`
+	Cover       string `json:"cover"`
+	Works       string `json:"works"`
+	Type        int    `json:"type"`
+	Sort        int    `json:"sort_index"`
+	PublishTime int    `json:"publish_time"`
+	New         bool   `json:"new"`
+}
+
+type AzurLane struct {
+	FileName    string `json:"file_name"`
+	IdWallpaper int    `json:"id_wallpaper"`
+	Url         string `json:"url"`
+}
 
 var (
 	ApiListWallpaperAzurLane    = "https://azurlane.yo-star.com/api/admin/special/public-list?page_index=1&page_num=1200&type=1"
@@ -45,7 +72,7 @@ func main() {
 		log.Fatal("read body error: ", err)
 	}
 
-	var resApi models.ResponseApi
+	var resApi ResponseApi
 	if err = json.Unmarshal(resBody, &resApi); err != nil {
 		log.Fatal("json Unmarshal error: ", err)
 	}
@@ -66,13 +93,13 @@ func main() {
 		idExist = append(idExist, id)
 	}
 
-	listWallpp := make([]models.AzurLane, 0)
+	listWallpp := make([]AzurLane, 0)
 	for _, row := range resApi.Data.Rows {
 		if crawal.IntInArray(idExist, row.ID) {
 			continue
 		}
 
-		var al models.AzurLane
+		var al AzurLane
 		al.Url = DomainLoadWallpaperAzurLane + row.Works
 		al.FileName = strings.ReplaceAll(row.Title+" ("+row.Artist+").jpeg", "/", "-")
 		al.IdWallpaper = row.ID
@@ -92,7 +119,7 @@ func main() {
 	defer db.Close()
 }
 
-func crawURL(db *sql.DB, queue <-chan models.AzurLane, path string, wg *sync.WaitGroup) {
+func crawURL(db *sql.DB, queue <-chan AzurLane, path string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for al := range queue {
@@ -111,8 +138,8 @@ func crawURL(db *sql.DB, queue <-chan models.AzurLane, path string, wg *sync.Wai
 	fmt.Println("Worker done and exit")
 }
 
-func startCraw(list []models.AzurLane) <-chan models.AzurLane {
-	queue := make(chan models.AzurLane, 100)
+func startCraw(list []AzurLane) <-chan AzurLane {
+	queue := make(chan AzurLane, 100)
 
 	go func() {
 		for _, v := range list {
