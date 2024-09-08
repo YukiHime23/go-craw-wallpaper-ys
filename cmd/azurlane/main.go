@@ -78,6 +78,7 @@ func main() {
 	}
 
 	db := crawal.GetSqliteDb()
+	createTable(db)
 
 	var idExist []int
 	// get id exist
@@ -117,6 +118,21 @@ func main() {
 
 	fmt.Println("All workers are done, exiting program.")
 	defer db.Close()
+}
+
+func createTable(db *sql.DB) {
+	// Kiểm tra xem bảng có tồn tại hay không, nếu không thì tạo mới
+	createTable := `
+		CREATE TABLE IF NOT EXISTS azur_lane (
+			id_wallpaper INT PRIMARY KEY,
+			file_name VARCHAR(255) NOT NULL,
+			url VARCHAR(255) NOT NULL
+		);
+	`
+	_, err := db.Exec(createTable)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func crawURL(db *sql.DB, queue <-chan AzurLane, path string, wg *sync.WaitGroup) {

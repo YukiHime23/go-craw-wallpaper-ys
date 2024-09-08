@@ -135,8 +135,11 @@ func createTable(db *sql.DB) {
 	createTable := `
 		CREATE TABLE IF NOT EXISTS aether_gazer (
 			id_wallpaper INT PRIMARY KEY,
-			file_name VARCHAR(255) NOT NULL,
-			url VARCHAR(255) NOT NULL
+			title VARCHAR(255) NOT NULL,
+			content_img VARCHAR(255) NOT NULL,
+			mobile_content_img_1 VARCHAR(255) NOT NULL,
+			mobile_content_img_2 VARCHAR(255) NOT NULL,
+			creator VARCHAR(255) NOT NULL
 		);
 	`
 	_, err := db.Exec(createTable)
