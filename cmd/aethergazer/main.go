@@ -15,8 +15,9 @@ import (
 )
 
 type ResponseApi struct {
-	StatusCode int     `json:"statusCode"`
+	StatusCode int     `json:"code"`
 	Data       ResData `json:"data"`
+  Msg string `json:"msg"`
 }
 
 type ResData struct {
@@ -28,23 +29,13 @@ type Wallpaper struct {
 	ID                int     `json:"id"`
 	Title             string  `json:"title"`
 	Type              string  `json:"type"`
-	Description       string  `json:"description"`
-	Lang              string  `json:"lang"`
 	ContentImg        string  `json:"contentImg"`
 	MobileContentImg1 string  `json:"mobileContentImg1"`
 	MobileContentImg2 string  `json:"mobileContentImg2"`
-	StickerList       *string `json:"stickerlist"`
 	PcThumbnail       string  `json:"pcThumbnail"`
 	MobileThumbnail   string  `json:"mobileThumbnail"`
-	ModelURL          string  `json:"modelUrl"`
 	StickerURL        string  `json:"stickerUrl"`
-	PvURL             string  `json:"pvUrl"`
 	Creator           string  `json:"creator"`
-	SortIndex         int     `json:"sortIndex"`
-	DownloadCount     int     `json:"downloadCount"`
-	ClickCount        int     `json:"clickCount"`
-	CreatedAt         int64   `json:"createdAt"`
-	UpdatedAt         int64   `json:"updatedAt"`
 }
 
 type AetherGazer struct {
