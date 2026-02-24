@@ -1,9 +1,8 @@
-package main
+package arknight
 
 import (
 	"database/sql"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,68 +10,71 @@ import (
 	"sync"
 	"time"
 
-	ys "github.com/YukiHime23/go-wallpaper-yostar"
+	ys "github.com/YukiHime23/game-wallpaper"
 )
 
-// Constants for configuration
-const (
-	defaultPath           = "AzurLane_Wallpaper"
-	defaultWorkerCount    = 5
-	defaultQueueSize      = 100
-	defaultRequestTimeout = 30 * time.Second
-)
-
-// ResponseApi represents the API response structure
-type ResponseApi struct {
-	StatusCode int     `json:"statusCode"`
-	Data       ResData `json:"data"`
+type responseApi struct {
+	Retcode int     `json:"retcode"`
+	Data    resData `json:"data"`
 }
 
-// ResData represents the data structure in the API response
-type ResData struct {
-	Count int         `json:"count"`
-	Rows  []Wallpaper `json:"rows"`
+type resData struct {
+	PageCountNum int      `json:"pageCountNum"`
+	FankitList   []fankit `json:"fankitList"`
 }
 
-// Wallpaper represents a wallpaper item from the API
-type Wallpaper struct {
-	ID          int    `json:"id"`
-	Title       string `json:"title"`
-	Artist      string `json:"artist"`
-	Cover       string `json:"cover"`
-	Works       string `json:"works"`
-	Type        int    `json:"type"`
-	Sort        int    `json:"sort_index"`
-	PublishTime int    `json:"publish_time"`
-	New         bool   `json:"new"`
+type wallpaper struct {
+	L string `json:"l"`
+	M string `json:"m"`
+	S string `json:"s"`
 }
 
-// AzurLane represents a wallpaper to be downloaded
-type AzurLane struct {
+type Asset struct {
+	Count int    `json:"count"`
+	ID    string `json:"_id"`
+	Index string `json:"index"`
+	URL   string `json:"url"`
+}
+
+type fankit struct {
+	Wallpaper      wallpaper `json:"wallpaper"`
+	WallpaperCount int       `json:"wallpaperCount"`
+	ZipCount       int       `json:"zipCount"`
+	ID             string    `json:"_id"`
+	Type           string    `json:"type"`
+	Title          string    `json:"title"`
+	Description    string    `json:"description"`
+	ArtistName     string    `json:"artistName"`
+	ArtistLink     string    `json:"artistLink"`
+	Assets         []Asset   `json:"assets"`
+	Zip            string    `json:"zip"`
+	ZipSize        string    `json:"zipSize"`
+	IsPublic       bool      `json:"ispublic"`
+	Index          int       `json:"index"`
+	CreatedAt      string    `json:"createdAt"`
+	V              int       `json:"__v"`
+}
+
+type Arknight struct {
 	IdGallery string `json:"id_gallery"`
 	FileName  string `json:"file_name"`
 	Url       string `json:"url"`
 }
 
 var (
-	apiListWallpaperAzurLane    = "https://azurlane.yo-star.com/api/admin/special/public-list?page_index=1&page_num=12000&type=1"
-	domainLoadWallpaperAzurLane = "https://webusstatic.yo-star.com/"
+	apiListWallpaperArknight = "https://arknights.global/api/cms/fankit/queryFankit?pageIndex=1&pageNum=1200&type=1"
+	baseUrlLoadWallpaper     = "https://webusstatic.yo-star.com/"
 )
 
-func main() {
-	// Parse command line flags
-	pathP := flag.String("path", defaultPath, "Path to the directory where wallpapers should be saved.")
-	flag.Parse()
+const (
+	defaultWorkerCount    = 5
+	defaultQueueSize      = 100
+	defaultRequestTimeout = 30 * time.Second
+)
 
-	// Create output directory
-	newPath, err := ys.CreateFolder(*pathP)
-	if err != nil {
-		log.Fatalf("Failed to create folder: %v", err)
-	}
-
+func DownloadArknightImages(newPath string) {
 	// Initialize database
 	db := ys.GetSqliteDb()
-	defer db.Close()
 
 	// Create HTTP client with timeout
 	client := &http.Client{
@@ -80,13 +82,13 @@ func main() {
 	}
 
 	// Fetch wallpaper list
-	wallpapers, err := fetchWallpapers(client, apiListWallpaperAzurLane)
+	wallpapers, err := fetchWallpapers(client, apiListWallpaperArknight)
 	if err != nil {
 		log.Fatalf("Failed to fetch wallpapers: %v", err)
 	}
 
 	// Get existing wallpaper IDs
-	existingIDs, err := ys.GetExistingWallpaperIDs(db, "SELECT id_gallery FROM yostar_gallery WHERE game = 'azurlane'")
+	existingIDs, err := ys.GetExistingWallpaperIDs(db, "SELECT id_gallery FROM yostar_gallery WHERE game = 'arknight'")
 	if err != nil {
 		log.Fatalf("Failed to get existing wallpaper IDs: %v", err)
 	}
@@ -95,7 +97,7 @@ func main() {
 	wallpapersToDownload := filterNewWallpapers(wallpapers, existingIDs)
 
 	// Create a channel for the wallpaper queue
-	queue := make(chan AzurLane, defaultQueueSize)
+	queue := make(chan Arknight, defaultQueueSize)
 
 	// Start workers
 	var wg sync.WaitGroup
@@ -119,32 +121,32 @@ func main() {
 }
 
 // fetchWallpapers retrieves the list of wallpapers from the API
-func fetchWallpapers(client *http.Client, url string) ([]Wallpaper, error) {
+func fetchWallpapers(client *http.Client, url string) ([]fankit, error) {
 	resBody, err := ys.FetchApi(client, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch wallpapers: %w", err)
 	}
 
-	var resApi ResponseApi
+	var resApi responseApi
 	if err = json.Unmarshal(resBody, &resApi); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
 	}
 
-	return resApi.Data.Rows, nil
+	return resApi.Data.FankitList, nil
 }
 
 // filterNewWallpapers filters out wallpapers that already exist in the database
-func filterNewWallpapers(wallpapers []Wallpaper, existingIDs []string) []AzurLane {
-	listWallpp := make([]AzurLane, 0, len(wallpapers))
+func filterNewWallpapers(wallpapers []fankit, existingIDs []string) []Arknight {
+	listWallpp := make([]Arknight, 0, len(wallpapers))
 	for _, row := range wallpapers {
-		if slices.Contains(existingIDs, fmt.Sprintf("%d", row.ID)) {
+		if slices.Contains(existingIDs, row.ID) {
 			continue
 		}
 
-		al := AzurLane{
-			IdGallery: fmt.Sprintf("%d", row.ID),
-			Url:       domainLoadWallpaperAzurLane + row.Works,
-			FileName:  fmt.Sprintf("%s(%s)", row.Title, row.Artist),
+		al := Arknight{
+			IdGallery: row.ID,
+			Url:       baseUrlLoadWallpaper + row.Wallpaper.L,
+			FileName:  fmt.Sprintf("%s (%s)", row.Title, row.ArtistName),
 		}
 
 		listWallpp = append(listWallpp, al)
@@ -153,7 +155,7 @@ func filterNewWallpapers(wallpapers []Wallpaper, existingIDs []string) []AzurLan
 }
 
 // crawURL downloads wallpapers and inserts them into the database
-func crawURL(db *sql.DB, queue <-chan AzurLane, path string, wg *sync.WaitGroup) {
+func crawURL(db *sql.DB, queue <-chan Arknight, path string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	// Prepare the SQL statement once for better performance
@@ -173,7 +175,7 @@ func crawURL(db *sql.DB, queue <-chan AzurLane, path string, wg *sync.WaitGroup)
 		log.Printf(`-> download done "%s" <-`, al.FileName)
 
 		// Insert into database
-		_, err := insertStmt.Exec(al.IdGallery, "azurlane", "wallpaper", al.FileName, al.Url)
+		_, err := insertStmt.Exec(al.IdGallery, "arknight", "wallpaper", al.FileName, al.Url)
 		if err != nil {
 			log.Printf("Error inserting data for %s: %v", al.FileName, err)
 			continue

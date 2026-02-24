@@ -1,4 +1,4 @@
-package crawal
+package arknight
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	gw "github.com/YukiHime23/game-wallpaper"
 )
 
 // ExtractHrefsFromScript extracts href values from script tags containing window.__resource
@@ -93,7 +95,7 @@ func DownloadImages(imageURLs []string, downloadDir string) error {
 		filename := filepath.Base(url)
 		fmt.Printf("Downloading %d/%d: %s\n", i+1, len(imageURLs), filename)
 
-		err := DownloadFile(url, "", downloadDir)
+		err := gw.DownloadFile(url, "", downloadDir)
 		if err != nil {
 			fmt.Printf("Failed to download %s: %v\n", filename, err)
 			continue
@@ -102,23 +104,6 @@ func DownloadImages(imageURLs []string, downloadDir string) error {
 
 	fmt.Printf("Download completed!\n")
 	return nil
-}
-
-// TestExtractHrefs demonstrates how to use the ExtractHrefsFromScript function
-func TestExtractHrefs() {
-	url := "https://endfield.gryphline.com/special/over-the-frontier"
-
-	fmt.Printf("Fetching hrefs from: %s\n", url)
-	hrefs, err := ExtractHrefsFromScript(url)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-
-	fmt.Printf("Found %d href values:\n", len(hrefs))
-	for i, href := range hrefs {
-		fmt.Printf("%d: %s\n", i+1, href)
-	}
 }
 
 // DownloadEndfieldImages extracts hrefs and downloads filtered images
@@ -137,7 +122,7 @@ func DownloadEndfieldImages() {
 	imageURLs := FilterImageURLs(hrefs)
 	fmt.Printf("Filtered to %d image URLs with format {num}.{hash}.jpg\n", len(imageURLs))
 
-	downloadDir, err := CreateFolder("Downloads/endfield-images")
+	downloadDir, err := gw.CreateFolder("Downloads/endfield-images")
 	if err != nil {
 		fmt.Printf("Error creating download directory: %v\n", err)
 		return

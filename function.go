@@ -1,4 +1,4 @@
-package crawal
+package gamewallpaper
 
 import (
 	"context"

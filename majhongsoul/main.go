@@ -11,67 +11,41 @@ import (
 	"sync"
 	"time"
 
-	ys "github.com/YukiHime23/go-wallpaper-yostar"
+	gw "github.com/YukiHime23/game-wallpaper"
 )
 
 type responseApi struct {
-	Retcode int     `json:"retcode"`
-	Data    resData `json:"data"`
+	Code int     `json:"code"`
+	Data resData `json:"data"`
+	Msg  string  `json:"msg"`
 }
 
 type resData struct {
-	PageCountNum int      `json:"pageCountNum"`
-	FankitList   []fankit `json:"fankitList"`
+	Count int            `json:"count"`
+	Rows  []wallpaperRow `json:"rows"`
 }
 
-type wallpaper struct {
-	L string `json:"l"`
-	M string `json:"m"`
-	S string `json:"s"`
+type wallpaperRow struct {
+	ID          int    `json:"id"`
+	PC          string `json:"pc"`
+	Mobile1     string `json:"mobile1"`
+	Mobile2     string `json:"mobile2"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
 }
 
-type Asset struct {
-	Count int    `json:"count"`
-	ID    string `json:"_id"`
-	Index string `json:"index"`
-	URL   string `json:"url"`
-}
-
-type fankit struct {
-	Wallpaper      wallpaper `json:"wallpaper"`
-	WallpaperCount int       `json:"wallpaperCount"`
-	ZipCount       int       `json:"zipCount"`
-	ID             string    `json:"_id"`
-	Type           string    `json:"type"`
-	Title          string    `json:"title"`
-	Description    string    `json:"description"`
-	ArtistName     string    `json:"artistName"`
-	ArtistLink     string    `json:"artistLink"`
-	Assets         []Asset   `json:"assets"`
-	Zip            string    `json:"zip"`
-	ZipSize        string    `json:"zipSize"`
-	IsPublic       bool      `json:"ispublic"`
-	Index          int       `json:"index"`
-	CreatedAt      string    `json:"createdAt"`
-	V              int       `json:"__v"`
-}
-
-type Arknight struct {
+type majongSoul struct {
 	IdGallery string `json:"id_gallery"`
 	FileName  string `json:"file_name"`
 	Url       string `json:"url"`
 }
 
-var (
-	apiListWallpaperArknight = "https://arknights.global/api/cms/fankit/queryFankit?pageIndex=1&pageNum=1200&type=1"
-	baseUrlLoadWallpaper     = "https://webusstatic.yo-star.com/"
-	defaultPath              = "Arknight_Wallpaper"
-)
-
 const (
-	defaultWorkerCount    = 5
-	defaultQueueSize      = 100
-	defaultRequestTimeout = 30 * time.Second
+	apiListWallpaperMahjongSoul = "https://mahjongsoul.yo-star.com/api/assets/wallpaper?pageIndex=1&pageNum=12000"
+	defaultPath                 = "MahjongSoul_Wallpaper"
+	defaultWorkerCount          = 5
+	defaultQueueSize            = 100
+	defaultRequestTimeout       = 30 * time.Second
 )
 
 func main() {
@@ -80,13 +54,14 @@ func main() {
 	flag.Parse()
 
 	// Create output directory
-	newPath, err := ys.CreateFolder(*pathP)
+	newPath, err := gw.CreateFolder(*pathP)
 	if err != nil {
 		log.Fatalf("Failed to create folder: %v", err)
 	}
 
 	// Initialize database
-	db := ys.GetSqliteDb()
+	db := gw.GetSqliteDb()
+	defer db.Close()
 
 	// Create HTTP client with timeout
 	client := &http.Client{
@@ -94,22 +69,23 @@ func main() {
 	}
 
 	// Fetch wallpaper list
-	wallpapers, err := fetchWallpapers(client, apiListWallpaperArknight)
+	wallpapers, err := fetchWallpapers(client, apiListWallpaperMahjongSoul)
 	if err != nil {
 		log.Fatalf("Failed to fetch wallpapers: %v", err)
 	}
 
 	// Get existing wallpaper IDs
-	existingIDs, err := ys.GetExistingWallpaperIDs(db, "SELECT id_gallery FROM yostar_gallery WHERE game = 'arknight'")
+	existingIDs, err := gw.GetExistingWallpaperIDs(db, "SELECT id_gallery FROM yostar_gallery WHERE game = 'mahjong_soul'")
 	if err != nil {
 		log.Fatalf("Failed to get existing wallpaper IDs: %v", err)
 	}
 
+	log.Println("len(existingIDs)>>>>>", len(existingIDs))
 	// Filter out existing wallpapers
 	wallpapersToDownload := filterNewWallpapers(wallpapers, existingIDs)
 
 	// Create a channel for the wallpaper queue
-	queue := make(chan Arknight, defaultQueueSize)
+	queue := make(chan majongSoul, defaultQueueSize)
 
 	// Start workers
 	var wg sync.WaitGroup
@@ -133,8 +109,8 @@ func main() {
 }
 
 // fetchWallpapers retrieves the list of wallpapers from the API
-func fetchWallpapers(client *http.Client, url string) ([]fankit, error) {
-	resBody, err := ys.FetchApi(client, url)
+func fetchWallpapers(client *http.Client, url string) ([]wallpaperRow, error) {
+	resBody, err := gw.FetchApi(client, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch wallpapers: %w", err)
 	}
@@ -144,21 +120,21 @@ func fetchWallpapers(client *http.Client, url string) ([]fankit, error) {
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
 	}
 
-	return resApi.Data.FankitList, nil
+	return resApi.Data.Rows, nil
 }
 
 // filterNewWallpapers filters out wallpapers that already exist in the database
-func filterNewWallpapers(wallpapers []fankit, existingIDs []string) []Arknight {
-	listWallpp := make([]Arknight, 0, len(wallpapers))
+func filterNewWallpapers(wallpapers []wallpaperRow, existingIDs []string) []majongSoul {
+	listWallpp := make([]majongSoul, 0, len(wallpapers))
 	for _, row := range wallpapers {
-		if slices.Contains(existingIDs, row.ID) {
+		if slices.Contains(existingIDs, fmt.Sprintf("%d", row.ID)) {
 			continue
 		}
 
-		al := Arknight{
-			IdGallery: row.ID,
-			Url:       baseUrlLoadWallpaper + row.Wallpaper.L,
-			FileName:  fmt.Sprintf("%s (%s)", row.Title, row.ArtistName),
+		al := majongSoul{
+			IdGallery: fmt.Sprintf("%d", row.ID),
+			Url:       row.PC,
+			FileName:  row.Title,
 		}
 
 		listWallpp = append(listWallpp, al)
@@ -167,7 +143,7 @@ func filterNewWallpapers(wallpapers []fankit, existingIDs []string) []Arknight {
 }
 
 // crawURL downloads wallpapers and inserts them into the database
-func crawURL(db *sql.DB, queue <-chan Arknight, path string, wg *sync.WaitGroup) {
+func crawURL(db *sql.DB, queue <-chan majongSoul, path string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	// Prepare the SQL statement once for better performance
@@ -180,14 +156,14 @@ func crawURL(db *sql.DB, queue <-chan Arknight, path string, wg *sync.WaitGroup)
 
 	for al := range queue {
 		// Download the file
-		if err := ys.DownloadFile(al.Url, al.FileName, path); err != nil {
+		if err := gw.DownloadFile(al.Url, al.FileName, path); err != nil {
 			log.Printf("Error downloading file %s: %v", al.FileName, err)
 			continue
 		}
 		log.Printf(`-> download done "%s" <-`, al.FileName)
 
 		// Insert into database
-		_, err := insertStmt.Exec(al.IdGallery, "arknight", "wallpaper", al.FileName, al.Url)
+		_, err := insertStmt.Exec(al.IdGallery, "mahjong_soul", "wallpaper", al.FileName, al.Url)
 		if err != nil {
 			log.Printf("Error inserting data for %s: %v", al.FileName, err)
 			continue

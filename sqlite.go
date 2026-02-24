@@ -1,4 +1,4 @@
-package crawal
+package gamewallpaper
 
 import (
 	"database/sql"
@@ -12,11 +12,11 @@ var db *sql.DB
 
 const dbPath = "yostar-gallery.db"
 
-func init() {
+func initDB() error {
 	var err error
 	db, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
-		log.Fatalf("failed to open database: %v", err)
+		return fmt.Errorf("failed to open database: %w", err)
 	}
 
 	createTable := `
@@ -33,11 +33,17 @@ func init() {
 	_, err = db.Exec(createTable)
 	if err != nil {
 		db.Close()
-		log.Fatalf("failed to create table: %v", err)
+		return fmt.Errorf("failed to create table: %w", err)
 	}
 	fmt.Println("=======DB created=======")
+	return nil
 }
 
 func GetSqliteDb() *sql.DB {
+	if db == nil {
+		if err := initDB(); err != nil {
+			log.Fatalf("Database initialization failed: %v", err)
+		}
+	}
 	return db
 }

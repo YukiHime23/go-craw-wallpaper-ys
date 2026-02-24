@@ -1,4 +1,4 @@
-module github.com/YukiHime23/go-wallpaper-yostar
+module github.com/YukiHime23/game-wallpaper
 
 go 1.21.3
 
