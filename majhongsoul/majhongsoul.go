@@ -1,9 +1,8 @@
-package main
+package majhongsoul
 
 import (
 	"database/sql"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -42,23 +41,12 @@ type majongSoul struct {
 
 const (
 	apiListWallpaperMahjongSoul = "https://mahjongsoul.yo-star.com/api/assets/wallpaper?pageIndex=1&pageNum=12000"
-	defaultPath                 = "MahjongSoul_Wallpaper"
 	defaultWorkerCount          = 5
 	defaultQueueSize            = 100
 	defaultRequestTimeout       = 30 * time.Second
 )
 
-func main() {
-	// Parse command line flags
-	pathP := flag.String("path", defaultPath, "Path to the directory where wallpapers should be saved.")
-	flag.Parse()
-
-	// Create output directory
-	newPath, err := gw.CreateFolder(*pathP)
-	if err != nil {
-		log.Fatalf("Failed to create folder: %v", err)
-	}
-
+func DownloadMahjongSoulImages(newPath string) {
 	// Initialize database
 	db := gw.GetSqliteDb()
 	defer db.Close()

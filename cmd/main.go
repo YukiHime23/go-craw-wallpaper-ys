@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	gw "github.com/YukiHime23/game-wallpaper"
+	"github.com/YukiHime23/game-wallpaper/aethergazer"
 	"github.com/YukiHime23/game-wallpaper/arknight"
 	"github.com/YukiHime23/game-wallpaper/azurlane"
+	"github.com/YukiHime23/game-wallpaper/majhongsoul"
 )
 
 func main() {
@@ -47,7 +50,24 @@ func main() {
 		arknight.DownloadEndfieldImages()
 
 	case "aethergazer":
-		fmt.Println("Aether Gazer download not yet integrated in main command.")
+		var path string
+		if *pathP == "" {
+			path = "AetherGazer_Wallpaper"
+		} else {
+			path = *pathP
+		}
+		// Create subdirectories for different image types
+		contentImgPath, err := gw.CreateFolder(filepath.Join(path, "contentImg"))
+		if err != nil {
+			log.Fatalf("Failed to create contentImg folder: %v", err)
+		}
+		mobileContentImgPath, err := gw.CreateFolder(filepath.Join(path, "mobileContentImg"))
+		if err != nil {
+			log.Fatalf("Failed to create mobileContentImg folder: %v", err)
+		}
+
+		fmt.Println("Downloading Aether Gazer wallpapers...")
+		aethergazer.DownloadAetherGazerImages(contentImgPath, mobileContentImgPath)
 
 	case "azurlane":
 		var path string
@@ -65,7 +85,19 @@ func main() {
 		azurlane.DownloadAzurLaneImages(newPath)
 
 	case "majhongsoul":
-		fmt.Println("Mahjong Soul download not yet integrated in main command.")
+		var path string
+		if *pathP == "" {
+			path = "MahjongSoul_Wallpaper"
+		} else {
+			path = *pathP
+		}
+		newPath, err := gw.CreateFolder(path)
+		if err != nil {
+			log.Fatalf("Failed to create folder for Mahjong Soul: %v", err)
+		}
+
+		fmt.Println("Downloading Mahjong Soul wallpapers...")
+		majhongsoul.DownloadMahjongSoulImages(newPath)
 
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown game: %s\n\n", game)

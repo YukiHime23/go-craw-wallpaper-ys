@@ -1,13 +1,11 @@
-package main
+package aethergazer
 
 import (
 	"database/sql"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 	"slices"
 	"sync"
 	"time"
@@ -61,21 +59,7 @@ var (
 	apiListWallpaperAetherGazer = "https://aethergazer.com/api/gallery/list?pageIndex=1&pageNum=12000&type=wallpaper"
 )
 
-func main() {
-	// Parse command line flags
-	pathP := flag.String("path", defaultPath, "Path to the directory where wallpapers should be saved.")
-	flag.Parse()
-
-	// Create subdirectories for different image types
-	contentImgPath, err := gw.CreateFolder(filepath.Join(*pathP, "contentImg"))
-	if err != nil {
-		log.Fatalf("Failed to create contentImg folder: %v", err)
-	}
-	mobileContentImgPath, err := gw.CreateFolder(filepath.Join(*pathP, "mobileContentImg"))
-	if err != nil {
-		log.Fatalf("Failed to create mobileContentImg folder: %v", err)
-	}
-
+func DownloadAetherGazerImages(contentImgPath, mobileContentImgPath string) {
 	// Initialize database
 	db := gw.GetSqliteDb()
 
